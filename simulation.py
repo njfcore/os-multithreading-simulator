@@ -6,17 +6,21 @@ from distribution import distribute_orders
 from worker import process_orders
 
 
-def run_worker(thread_id, orders, results):
+def run_worker(thread_id, orders, results, verbose):
     """
     Run a worker and save its execution time.
     """
 
-    elapsed_time = process_orders(thread_id, orders)
+    elapsed_time = process_orders(
+        thread_id,
+        orders,
+        verbose
+    )
 
     results[thread_id - 1] = elapsed_time
 
 
-def run_simulation(total_orders, thread_count):
+def run_simulation(total_orders, thread_count, verbose=True, show_summary=True):
 
     # Distribute orders among threads
     distribution = distribute_orders(total_orders, thread_count)
@@ -35,7 +39,7 @@ def run_simulation(total_orders, thread_count):
 
         thread = threading.Thread(
             target=run_worker,
-            args=(i + 1, distribution[i], results)
+            args=(i + 1, distribution[i], results, verbose)
         )
 
         threads.append(thread)
@@ -52,18 +56,19 @@ def run_simulation(total_orders, thread_count):
     end_time = time.perf_counter()
     total_time = end_time - start_time
 
-    print("\n========== Simulation Results ==========")
-    print(f"Total orders: {total_orders}")
-    print(f"Number of threads: {thread_count}")
-    print(f"Total execution time: {total_time:.2f} seconds")
+    if show_summary:
+        print("\n========== Simulation Results ==========")
+        print(f"Total orders: {total_orders}")
+        print(f"Number of threads: {thread_count}")
+        print(f"Total execution time: {total_time:.2f} seconds")
 
-    print("\n---------- Thread Results ----------")
+        print("\n---------- Thread Results ----------")
 
-    for i, elapsed in enumerate(results):
-        print(f"Thread {i + 1}: {elapsed:.2f} seconds")
+        for i, elapsed in enumerate(results):
+            print(f"Thread {i + 1}: {elapsed:.2f} seconds")
 
     return total_time, results
 
 
 if __name__ == "__main__":
-    run_simulation(total_orders=6, thread_count=3)
+    run_simulation(total_orders=100, thread_count=3)

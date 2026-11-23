@@ -6,7 +6,15 @@ from distribution import distribute_orders
 from worker import process_orders
 
 
-def run_worker(thread_id, orders, results, verbose):
+
+def run_worker(
+    thread_id,
+    orders,
+    results,
+    verbose,
+    progress_callback=None,
+    stop_event=None
+):
     """
     Run a worker and save its execution time.
     """
@@ -14,19 +22,32 @@ def run_worker(thread_id, orders, results, verbose):
     elapsed_time = process_orders(
         thread_id,
         orders,
-        verbose
+        verbose,
+        progress_callback,
+        stop_event
     )
 
     results[thread_id - 1] = elapsed_time
 
 
-def run_simulation(total_orders, thread_count, verbose=True, show_summary=True):
+
+def run_simulation(
+    total_orders,
+    thread_count,
+    verbose=True,
+    show_summary=True,
+    progress_callback=None,
+    stop_event=None,
+):
 
     # Distribute orders among threads
     distribution = distribute_orders(total_orders, thread_count)
 
     # Store thread execution times
     results = [0] * thread_count
+    
+    if stop_event is None:
+        stop_event = threading.Event()
 
     # Store all thread objects
     threads = []
@@ -39,7 +60,14 @@ def run_simulation(total_orders, thread_count, verbose=True, show_summary=True):
 
         thread = threading.Thread(
             target=run_worker,
-            args=(i + 1, distribution[i], results, verbose)
+            args=(
+                i + 1,
+                distribution[i],
+                results,
+                verbose,
+                progress_callback,
+                stop_event
+            )
         )
 
         threads.append(thread)
